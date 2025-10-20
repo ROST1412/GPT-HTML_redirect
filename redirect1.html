@@ -63,12 +63,30 @@
       color: #fff;
       cursor: pointer;
     }
+
+    /* ✅ カウントダウン表示を右下に固定 */
+    #timer {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    #timer.show {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <h1>外部リンク誘導ページ</h1>
-    <p><code>?url=〇〇〇</code> の形式でアクセスすると、指定リンクを開けます。</p>
+    <p>URLの形式：<code>/AAA.html/BBBBBBB/-t5</code> のように指定できます。</p>
 
     <div class="urlbox">
       <input id="urlInput" type="text" placeholder="ここに新しいURLを入力" />
@@ -93,10 +111,27 @@
     </div>
   </div>
 
+  <!-- ✅ カウントダウン用フロート要素 -->
+  <div id="timer"></div>
+
   <script>
     (function(){
-      const params = new URLSearchParams(location.search);
-      const targetUrl = params.get('url');
+      const pathParts = location.pathname.split('/');
+      // パスの最後が -t数字 の場合タイマー秒数取得
+      let timerValue = null;
+      const lastPart = pathParts[pathParts.length - 1];
+      if (/^-t\\d+$/.test(lastPart)) {
+        timerValue = parseInt(lastPart.replace('-t', ''), 10);
+        pathParts.pop(); // -t〇 を削除
+      }
+
+      // HTMLファイル名の次の要素がリンクターゲット
+      const htmlIndex = pathParts.findIndex(p => /\\.html?$/.test(p));
+      let targetUrl = '';
+      if (htmlIndex !== -1 && pathParts.length > htmlIndex + 1) {
+        targetUrl = decodeURIComponent(pathParts[htmlIndex + 1]);
+      }
+
       const targetEl = document.getElementById('target');
       const openBtn = document.getElementById('openBtn');
       const safariBtn = document.getElementById('safariBtn');
@@ -104,6 +139,7 @@
       const backBtn = document.getElementById('backBtn');
       const input = document.getElementById('urlInput');
       const changeBtn = document.getElementById('changeBtn');
+      const timerEl = document.getElementById('timer');
 
       if (targetUrl) {
         targetEl.textContent = targetUrl;
@@ -133,8 +169,26 @@
       changeBtn.onclick = () => {
         const newUrl = input.value.trim();
         if (!newUrl) return alert('URLを入力してください');
-        location.href = location.pathname + '?url=' + encodeURIComponent(newUrl);
+        location.href = location.origin + location.pathname.split('.html')[0] + '.html/' + encodeURIComponent(newUrl);
       };
+
+      // ✅ タイマー付き自動リダイレクト（右下表示）
+      if (timerValue && targetUrl) {
+        let remaining = timerValue;
+        timerEl.textContent = `${remaining} 秒後に移動します…`;
+        timerEl.classList.add('show');
+
+        const interval = setInterval(() => {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(interval);
+            timerEl.textContent = '移動中…';
+            location.href = targetUrl;
+          } else {
+            timerEl.textContent = `${remaining} 秒後に移動します…`;
+          }
+        }, 1000);
+      }
     })();
   </script>
 </body>
