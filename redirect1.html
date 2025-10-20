@@ -1,159 +1,272 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VideoStep リンク誘導ページ</title>
-<style>
-  body {
-    font-family: "Segoe UI", sans-serif;
-    text-align: center;
-    padding: 40px;
-    background: #fafafa;
-  }
-  h2 { margin-bottom: 20px; }
-  input, button {
-    font-size: 1rem;
-    margin: 6px;
-    padding: 8px 14px;
-  }
-  #timerBox {
-    position: fixed;
-    right: 15px;
-    bottom: 15px;
-    font-size: 0.9rem;
-    background: rgba(0,0,0,0.65);
-    color: #fff;
-    padding: 8px 12px;
-    border-radius: 8px;
-    display: none;
-  }
-  #overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(255,255,255,0.9);
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    font-size: 1.2rem;
-  }
-  #overlay.show { display: flex; animation: fadeIn 0.3s ease forwards; }
-  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
-  #spin {
-    border: 4px solid #ccc;
-    border-top: 4px solid #333;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 15px;
-  }
-  @keyframes spin { 100% { transform: rotate(360deg); } }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>リンク誘導ページ</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial;
+      background: #f6f8fb;
+      margin: 0;
+      color: #111;
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 6vh auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      padding: 24px;
+    }
+    h1 { font-size: 20px; margin: 0 0 10px; }
+    .target {
+      word-break: break-all;
+      background: #f0f4ff;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .urlbox, .timerbox {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    input {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      padding: 8px 14px;
+      font-size: 15px;
+      border: 0;
+      border-radius: 6px;
+      background: #007aff;
+      color: #fff;
+      cursor: pointer;
+    }
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      border: 0;
+      cursor: pointer;
+    }
+    .btn.open { background: #0066ff; color: #fff; }
+    .btn.safari { background: #1d1d1d; color: #fff; }
+    .btn.app { background: #e2e8f0; color: #111; }
+    .btn.back { background: #ccc; color: #000; }
+    .note { margin-top: 14px; color: #666; font-size: 14px; }
+    #timer {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    #timer.show { opacity: 1; }
+    #overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s;
+      z-index: 99999;
+    }
+    #overlay.show { opacity: 1; pointer-events: all; }
+    #overlay span {
+      font-size: 18px;
+      color: #333;
+      margin-top: 16px;
+      animation: blink 1.2s infinite;
+    }
+    .loader {
+      border: 4px solid #ddd;
+      border-top: 4px solid #007aff;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes blink {
+      0%,100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <h1>リンク誘導ページ（?url=形式）</h1>
+    <p>例：<code>?url=https://app.videostep.io&t=5</code></p>
 
-  <h2>VideoStep リンク誘導ページ</h2>
-  <p>以下のURLに基づいて遷移します。</p>
+    <div class="urlbox">
+      <input id="urlInput" type="text" placeholder="新しいURLを入力 (例: https://...)" />
+      <button id="changeBtn">URLを変更する</button>
+    </div>
 
-  <input id="urlInput" type="text" size="45" placeholder="https://app.videostep.io">
-  <br>
-  <button id="changeUrl">URLを変更する</button>
-  <br><br>
+    <div class="timerbox">
+      <input id="timerInput" type="number" min="0" placeholder="秒数 (空欄で自動redirect解除)" />
+      <button id="timerBtn">タイマー設定</button>
+    </div>
 
-  <button id="normalBtn">リンクへ移動（通常）</button>
-  <button id="safariBtn">Safariで開く（推奨）</button>
-  <button id="appBtn">アプリ起動を試す（カスタムスキーム）</button>
+    <div><strong>誘導先URL：</strong>
+      <div id="target" class="target">解析中…</div>
+    </div>
 
-  <div id="timerBox"></div>
+    <div class="btns">
+      <button id="openBtn" class="btn open">リンクへ移動</button>
+      <button id="safariBtn" class="btn safari">Safariで開く</button>
+      <button id="appBtn" class="btn app">アプリ起動を試す</button>
+      <button id="backBtn" class="btn back">戻る</button>
+    </div>
 
-  <div id="overlay">
-    <div id="spin"></div>
-    <div>Safariで開いています...</div>
+    <div class="note">アプリ内ブラウザでは挙動が制限される場合があります。</div>
   </div>
 
-<script>
-(function(){
-  const params = new URLSearchParams(location.search);
-  const urlParam = params.get("url");
-  const tParam = parseInt(params.get("t") || "0");
+  <div id="timer"></div>
+  <div id="overlay">
+    <div class="loader"></div>
+    <span>Safariで開いています…</span>
+  </div>
 
-  const input = document.getElementById("urlInput");
-  const overlay = document.getElementById("overlay");
-  const timerBox = document.getElementById("timerBox");
-  const safariBtn = document.getElementById("safariBtn");
+  <script>
+  (function(){
+    const params = new URLSearchParams(location.search);
+    const urlParam = params.get("url");
+    let tParam = parseInt(params.get("t"), 10);
 
-  if (urlParam) input.value = urlParam;
+    const targetEl = document.getElementById("target");
+    const input = document.getElementById("urlInput");
+    const changeBtn = document.getElementById("changeBtn");
+    const openBtn = document.getElementById("openBtn");
+    const safariBtn = document.getElementById("safariBtn");
+    const appBtn = document.getElementById("appBtn");
+    const backBtn = document.getElementById("backBtn");
+    const timerEl = document.getElementById("timer");
+    const overlay = document.getElementById("overlay");
+    const timerInput = document.getElementById("timerInput");
+    const timerBtn = document.getElementById("timerBtn");
 
-  function openInSafari(url) {
-    overlay.classList.add("show");
-    setTimeout(() => {
-      try {
-        const ua = navigator.userAgent;
-        const isiOS = /iPhone|iPad|iPod/i.test(ua);
-        const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+    const ua = navigator.userAgent.toLowerCase();
+    const isiOS = /iphone|ipad|ipod/.test(ua);
+    const isWindows = /windows/.test(ua);
 
-        if (isiOS && !isSafari) {
-          // iOSアプリ内ブラウザ → Safariへ
-          const newWin = window.open(url, "_blank");
-          if (!newWin) location.href = url;
-        } else if (!isiOS && !isSafari) {
-          // Windows/Chrome → 新タブ
-          window.open(url, "_blank");
-        } else {
-          // Safari → 同タブ
+    // 疑似タッチでSafariを開く
+    function simulateTapOpen(url) {
+      overlay.classList.add("show");
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      const clickEvent = new MouseEvent("click", { view: window, bubbles: true, cancelable: true });
+      a.dispatchEvent(clickEvent);
+      a.remove();
+    }
+
+    // 通常のSafariオープン
+    function openInSafari(url) {
+      overlay.classList.add("show");
+      setTimeout(() => {
+        try {
+          if (isiOS) {
+            simulateTapOpen(url);
+          } else if (isWindows) {
+            window.open(url, "_blank");
+          } else {
+            const newWin = window.open(url, "_blank");
+            if (!newWin) location.href = url;
+          }
+        } catch (e) {
           location.href = url;
         }
-      } catch (e) {
-        location.href = url;
-      }
-    }, 100);
-  }
-
-  document.getElementById("changeUrl").onclick = () => {
-    const newUrl = input.value.trim();
-    location.href = `${location.origin}${location.pathname}?url=${encodeURIComponent(newUrl)}&t=${tParam}`;
-  };
-
-  document.getElementById("normalBtn").onclick = () => {
-    const url = input.value.trim();
-    if (url) location.href = url;
-  };
-
-  safariBtn.onclick = () => {
-    const url = input.value.trim();
-    if (url) openInSafari(url);
-  };
-
-  document.getElementById("appBtn").onclick = () => {
-    try {
-      location.href = "videostepclientapp://";
-    } catch(e){}
-  };
-
-  // 自動リダイレクトタイマー
-  if (urlParam && !isNaN(tParam)) {
-    if (tParam <= 0) {
-      safariBtn.click(); // 即Safariで開く
-    } else {
-      let remaining = tParam;
-      timerBox.style.display = "block";
-      timerBox.textContent = `${remaining} 秒後にSafariで開きます…`;
-
-      const interval = setInterval(() => {
-        remaining--;
-        if (remaining <= 0) {
-          clearInterval(interval);
-          timerBox.textContent = "Safariで開いています…";
-          safariBtn.click(); // 擬似クリックでSafariを確実に開く
-        } else {
-          timerBox.textContent = `${remaining} 秒後にSafariで開きます…`;
-        }
-      }, 1000);
+      }, 100);
     }
-  }
-})();
-</script>
+
+    if (urlParam) {
+      const decodedUrl = decodeURIComponent(urlParam);
+      targetEl.textContent = decodedUrl;
+      input.value = decodedUrl;
+      if (!isNaN(tParam)) timerInput.value = tParam;
+
+      if (!isNaN(tParam) && tParam === 0) {
+        openInSafari(decodedUrl);
+      } else if (!isNaN(tParam) && tParam > 0) {
+        let remaining = tParam;
+        timerEl.classList.add("show");
+        timerEl.textContent = `${remaining} 秒後にSafariで開きます…`;
+
+        const interval = setInterval(() => {
+          remaining--;
+          if (remaining <= 0) {
+            clearInterval(interval);
+            timerEl.textContent = "Safariで開いています…";
+            simulateTapOpen(decodedUrl); // 疑似クリック実行
+          } else {
+            timerEl.textContent = `${remaining} 秒後にSafariで開きます…`;
+          }
+        }, 1000);
+      }
+    } else {
+      targetEl.textContent = "URLパラメータ (?url=) が指定されていません。";
+    }
+
+    openBtn.onclick = () => { if (urlParam) location.href = decodeURIComponent(urlParam); };
+    safariBtn.onclick = () => { if (urlParam) openInSafari(decodeURIComponent(urlParam)); };
+    appBtn.onclick = () => {
+      const target = decodeURIComponent(urlParam || "");
+      if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(target) && !/^https?:/i.test(target)) {
+        const ifr = document.createElement("iframe");
+        ifr.style.display = "none";
+        ifr.src = target;
+        document.body.appendChild(ifr);
+        setTimeout(()=>ifr.remove(), 1500);
+      } else {
+        location.href = target;
+      }
+    };
+    backBtn.onclick = () => { if (document.referrer) history.back(); };
+
+    changeBtn.onclick = () => {
+      const newUrl = input.value.trim();
+      if (!newUrl) return alert("URLを入力してください");
+      const newT = timerInput.value ? "&t=" + parseInt(timerInput.value, 10) : "";
+      location.href = `${location.pathname}?url=${encodeURIComponent(newUrl)}${newT}`;
+    };
+
+    timerBtn.onclick = () => {
+      const newT = timerInput.value.trim();
+      const urlNow = input.value.trim();
+      if (!urlNow) return alert("URLを入力してください");
+      if (!newT) {
+        location.href = `${location.pathname}?url=${encodeURIComponent(urlNow)}`;
+      } else {
+        location.href = `${location.pathname}?url=${encodeURIComponent(urlNow)}&t=${parseInt(newT, 10)}`;
+      }
+    };
+  })();
+  </script>
 </body>
 </html>
