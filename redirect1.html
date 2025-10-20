@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>リンク誘導ページ（タイマー付き）</title>
+  <title>リンク誘導ページ（タイマー制御付き）</title>
   <style>
     body {
       font-family: -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial;
@@ -23,13 +23,14 @@
     .urlbox, .timebox {
       display: flex; gap: 8px; margin-bottom: 20px;
     }
-    .urlbox input, .timebox input {
+    input {
       flex: 1; padding: 8px 10px; font-size: 15px;
       border: 1px solid #ccc; border-radius: 6px;
     }
-    .urlbox button, .timebox button {
-      padding: 8px 14px; font-size: 15px; border: 0;
-      border-radius: 6px; background: #007aff; color: #fff; cursor: pointer;
+    button {
+      padding: 8px 14px; font-size: 15px;
+      border: 0; border-radius: 6px;
+      background: #007aff; color: #fff; cursor: pointer;
     }
     .btns {
       display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;
@@ -45,11 +46,16 @@
     .note { margin-top: 14px; color: #666; font-size: 14px; }
     #timer {
       position: fixed; right: 16px; bottom: 16px;
-      background: rgba(0,0,0,0.75); color: #fff; padding: 8px 14px;
+      background: rgba(0,0,0,0.8); color: #fff; padding: 8px 14px;
       border-radius: 20px; font-size: 14px; z-index: 9999;
       opacity: 0; transition: opacity .3s;
+      display: flex; align-items: center; gap: 8px;
     }
     #timer.show { opacity: 1; }
+    #stopBtn {
+      background: #ff4d4d; color: #fff; border: none;
+      border-radius: 16px; padding: 4px 8px; font-size: 12px; cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -65,6 +71,7 @@
     <div class="timebox">
       <input id="timeInput" type="number" min="1" placeholder="自動移動までの秒数" />
       <button id="timeBtn">タイマーを変更</button>
+      <button id="removeTimeBtn" style="background:#999;">タイマー削除</button>
     </div>
 
     <div><strong>誘導先URL：</strong>
@@ -81,7 +88,7 @@
     <div class="note">アプリ内ブラウザでは挙動が制限される場合があります。</div>
   </div>
 
-  <div id="timer"></div>
+  <div id="timer"><span id="timerText"></span><button id="stopBtn">停止</button></div>
 
   <script>
   (function(){
@@ -94,11 +101,17 @@
     const changeBtn = document.getElementById("changeBtn");
     const timeInput = document.getElementById("timeInput");
     const timeBtn = document.getElementById("timeBtn");
+    const removeTimeBtn = document.getElementById("removeTimeBtn");
     const openBtn = document.getElementById("openBtn");
     const safariBtn = document.getElementById("safariBtn");
     const appBtn = document.getElementById("appBtn");
     const backBtn = document.getElementById("backBtn");
     const timerEl = document.getElementById("timer");
+    const timerText = document.getElementById("timerText");
+    const stopBtn = document.getElementById("stopBtn");
+
+    let redirectTimer = null;
+    let remaining = 0;
 
     if (urlParam) {
       const decodedUrl = decodeURIComponent(urlParam);
@@ -107,24 +120,32 @@
 
       if (!isNaN(tParam) && tParam > 0) {
         timeInput.value = tParam;
-        let remaining = tParam;
+        remaining = tParam;
         timerEl.classList.add("show");
-        timerEl.textContent = `${remaining} 秒後に移動します…`;
+        timerText.textContent = `${remaining} 秒後に移動します…`;
 
-        const interval = setInterval(() => {
+        redirectTimer = setInterval(() => {
           remaining--;
           if (remaining <= 0) {
-            clearInterval(interval);
-            timerEl.textContent = "移動中…";
+            clearInterval(redirectTimer);
+            timerText.textContent = "移動中…";
             location.href = decodedUrl;
           } else {
-            timerEl.textContent = `${remaining} 秒後に移動します…`;
+            timerText.textContent = `${remaining} 秒後に移動します…`;
           }
         }, 1000);
       }
     } else {
       targetEl.textContent = "URLパラメータ (?url=) が指定されていません。";
     }
+
+    stopBtn.onclick = () => {
+      if (redirectTimer) {
+        clearInterval(redirectTimer);
+        redirectTimer = null;
+        timerText.textContent = "⏸ 自動移動を停止しました";
+      }
+    };
 
     openBtn.onclick = () => { if (urlParam) location.href = decodeURIComponent(urlParam); };
     safariBtn.onclick = () => { if (urlParam) window.open(decodeURIComponent(urlParam), "_blank"); };
@@ -155,6 +176,12 @@
       const currentUrl = input.value.trim() || urlParam;
       if (!currentUrl) return alert("URLが未指定です");
       location.href = `${location.pathname}?url=${encodeURIComponent(currentUrl)}&t=${newTime}`;
+    };
+
+    removeTimeBtn.onclick = () => {
+      const currentUrl = input.value.trim() || urlParam;
+      if (!currentUrl) return alert("URLが未指定です");
+      location.href = `${location.pathname}?url=${encodeURIComponent(currentUrl)}`;
     };
   })();
   </script>
