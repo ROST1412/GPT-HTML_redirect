@@ -3,205 +3,159 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>リンク誘導ページ（修正版）</title>
+  <title>リンク誘導ページ（タイマー付き）</title>
   <style>
-    body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial;background:#f6f8fb;margin:0;color:#111}
-    .wrap{max-width:720px;margin:6vh auto;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.08);padding:24px}
-    h1{font-size:20px;margin:0 0 10px} p{margin:0 0 16px;color:#444}
-    .target{word-break:break-all;background:#f0f4ff;padding:10px;border-radius:6px;margin-bottom:16px}
-    .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
-    .btn{flex:1;padding:12px;border-radius:10px;border:0;font-size:16px;cursor:pointer}
-    .btn.open{background:#0066ff;color:white}
-    .btn.safari{background:#1d1d1d;color:white}
-    .btn.fallback{background:#e2e8f0;color:#111}
-    .btn.back{background:#ccc;color:#000}
-    .note{margin-top:14px;color:#666;font-size:14px}
-    .urlbox{display:flex;gap:8px;margin-bottom:20px}
-    .urlbox input{flex:1;padding:8px 10px;font-size:15px;border:1px solid #ccc;border-radius:6px}
-    .urlbox button{padding:8px 14px;font-size:15px;border:0;border-radius:6px;background:#007aff;color:#fff;cursor:pointer}
-    #timer{position:fixed;right:16px;bottom:16px;background:rgba(0,0,0,0.75);color:#fff;padding:8px 14px;border-radius:20px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s}
-    #timer.show{opacity:1}
+    body {
+      font-family: -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial;
+      background: #f6f8fb; margin: 0; color: #111;
+    }
+    .wrap {
+      max-width: 720px; margin: 6vh auto; background: #fff;
+      border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      padding: 24px;
+    }
+    h1 { font-size: 20px; margin: 0 0 10px; }
+    p { margin: 0 0 16px; color: #444; }
+    .target {
+      word-break: break-all; background: #f0f4ff;
+      padding: 10px; border-radius: 6px; margin-bottom: 16px;
+    }
+    .urlbox, .timebox {
+      display: flex; gap: 8px; margin-bottom: 20px;
+    }
+    .urlbox input, .timebox input {
+      flex: 1; padding: 8px 10px; font-size: 15px;
+      border: 1px solid #ccc; border-radius: 6px;
+    }
+    .urlbox button, .timebox button {
+      padding: 8px 14px; font-size: 15px; border: 0;
+      border-radius: 6px; background: #007aff; color: #fff; cursor: pointer;
+    }
+    .btns {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;
+    }
+    .btn {
+      flex: 1; padding: 12px; border-radius: 10px; border: 0;
+      font-size: 16px; cursor: pointer;
+    }
+    .btn.open { background: #0066ff; color: white; }
+    .btn.safari { background: #1d1d1d; color: white; }
+    .btn.app { background: #e2e8f0; color: #111; }
+    .btn.back { background: #ccc; color: #000; }
+    .note { margin-top: 14px; color: #666; font-size: 14px; }
+    #timer {
+      position: fixed; right: 16px; bottom: 16px;
+      background: rgba(0,0,0,0.75); color: #fff; padding: 8px 14px;
+      border-radius: 20px; font-size: 14px; z-index: 9999;
+      opacity: 0; transition: opacity .3s;
+    }
+    #timer.show { opacity: 1; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>外部リンク誘導ページ（修正版）</h1>
-    <p>形式：<code>/AAA.html/BBBBBBB/</code> または <code>/AAA.html/BBBBBBB/-t5</code> 。<br>
-       <strong>注：</strong> BBBBBB にスラッシュを含む完全URL（例: <code>https://app.videostep.io/manual?id=1</code>）をそのまま置いても動作します。</p>
+    <h1>リンク誘導ページ（?url=形式 & t=秒数）</h1>
+    <p>例：<code>?url=https://app.videostep.io&t=5</code></p>
 
     <div class="urlbox">
-      <input id="urlInput" type="text" placeholder="ここに新しいURLを入力（例: https://... または videostepclientapp://...）" />
+      <input id="urlInput" type="text" placeholder="新しいURLを入力 (例: https://...)" />
       <button id="changeBtn">URLを変更する</button>
     </div>
 
-    <div>
-      <strong>誘導先URL：</strong>
+    <div class="timebox">
+      <input id="timeInput" type="number" min="1" placeholder="自動移動までの秒数" />
+      <button id="timeBtn">タイマーを変更</button>
+    </div>
+
+    <div><strong>誘導先URL：</strong>
       <div id="target" class="target">解析中…</div>
     </div>
 
     <div class="btns">
-      <button id="openBtn" class="btn open">リンクへ移動（通常）</button>
+      <button id="openBtn" class="btn open">リンクへ移動</button>
       <button id="safariBtn" class="btn safari">Safariで開く</button>
-      <button id="fallbackBtn" class="btn fallback">アプリ起動を試す</button>
+      <button id="appBtn" class="btn app">アプリ起動を試す</button>
       <button id="backBtn" class="btn back">戻る</button>
     </div>
 
-    <div id="msg" class="note">
-      ※ アプリ内ブラウザでは外部アプリ起動やUniversal Linkが制限される場合があります。問題が出たら「戻る」を押してください。
-    </div>
+    <div class="note">アプリ内ブラウザでは挙動が制限される場合があります。</div>
   </div>
 
   <div id="timer"></div>
 
   <script>
   (function(){
-    'use strict';
+    const params = new URLSearchParams(location.search);
+    const urlParam = params.get("url");
+    const tParam = parseInt(params.get("t"), 10);
 
-    const targetEl = document.getElementById('target');
-    const openBtn = document.getElementById('openBtn');
-    const safariBtn = document.getElementById('safariBtn');
-    const fallbackBtn = document.getElementById('fallbackBtn');
-    const backBtn = document.getElementById('backBtn');
-    const input = document.getElementById('urlInput');
-    const changeBtn = document.getElementById('changeBtn');
-    const timerEl = document.getElementById('timer');
+    const targetEl = document.getElementById("target");
+    const input = document.getElementById("urlInput");
+    const changeBtn = document.getElementById("changeBtn");
+    const timeInput = document.getElementById("timeInput");
+    const timeBtn = document.getElementById("timeBtn");
+    const openBtn = document.getElementById("openBtn");
+    const safariBtn = document.getElementById("safariBtn");
+    const appBtn = document.getElementById("appBtn");
+    const backBtn = document.getElementById("backBtn");
+    const timerEl = document.getElementById("timer");
 
-    // Helper: trySafeDecode (handles double-encoding safely)
-    function trySafeDecode(s){
-      if (!s) return s;
-      try { return decodeURIComponent(s); } catch(e) {
-        try { return decodeURIComponent(decodeURIComponent(s)); } catch(e2) { return s; }
-      }
-    }
+    if (urlParam) {
+      const decodedUrl = decodeURIComponent(urlParam);
+      targetEl.textContent = decodedUrl;
+      input.value = decodedUrl;
 
-    // 1) Try query param ?url= first (preferred)
-    const qs = new URLSearchParams(location.search);
-    let candidate = qs.get('url');
-
-    // 2) If not, parse pathname pattern /AAA.html/.../(-tN)?
-    if (!candidate) {
-      // Split pathname into segments (ignore empty segments)
-      const segs = location.pathname.split('/').filter(Boolean);
-      // find index of html file (ends with .html or .htm)
-      let htmlIndex = -1;
-      for (let i=0;i<segs.length;i++){
-        if (segs[i].toLowerCase().endsWith('.html') || segs[i].toLowerCase().endsWith('.htm')) { htmlIndex = i; break; }
-      }
-      if (htmlIndex !== -1) {
-        // collect all subsequent segments into an array
-        const tailSegs = segs.slice(htmlIndex + 1);
-        // if last segment is -tN, remove it and store timer
-        let timerValue = null;
-        if (tailSegs.length > 0) {
-          const last = tailSegs[tailSegs.length - 1];
-          const m = /^-t(\d+)$/.exec(last);
-          if (m) {
-            timerValue = parseInt(m[1], 10);
-            tailSegs.pop();
-          }
-        }
-        if (tailSegs.length > 0) {
-          // Reconstruct target by joining with '/' (handles raw slashes that became separate segments)
-          candidate = tailSegs.join('/');
-          // store timerValue globally if found
-          window.__autoRedirectTimer = timerValue;
-        } else {
-          // maybe nothing after html, leave candidate null
-        }
-      }
-    }
-
-    // 3) If found, decode safely (handles percent-encoded or plain)
-    if (candidate) {
-      candidate = trySafeDecode(candidate);
-    }
-
-    // Expose target for other logic
-    const targetUrl = candidate || '';
-
-    // Show or fallback
-    if (targetUrl) {
-      targetEl.textContent = targetUrl;
-      input.value = targetUrl;
-    } else {
-      targetEl.textContent = '誘導先が見つかりません。上のボックスに入力して「URLを変更する」を押してください。';
-    }
-
-    // Button behaviors
-    openBtn.addEventListener('click', function(){ if (targetUrl) location.href = targetUrl; });
-    safariBtn.addEventListener('click', function(){ if (targetUrl) window.open(targetUrl, '_blank', 'noopener,noreferrer'); });
-    fallbackBtn.addEventListener('click', function(){
-      if (!targetUrl) return alert('ターゲットがありません');
-      // If it's already a custom scheme, try directly
-      if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(targetUrl) && !/^https?:\/\//i.test(targetUrl)) {
-        const ifr = document.createElement('iframe'); ifr.style.display='none'; ifr.src = targetUrl; document.body.appendChild(ifr);
-        setTimeout(()=> ifr.remove(), 1200);
-        return;
-      }
-      // Otherwise optionally attempt scheme conversion for known host (customize as needed)
-      // Example: convert https://app.videostep.io/... -> videostepclientapp://...
-      try {
-        const u = new URL(targetUrl, location.href);
-        if (u.hostname && u.hostname.indexOf('app.videostep.io') !== -1) {
-          const schemeUrl = 'videostepclientapp://' + (u.pathname + (u.search || '')).replace(/^\//,'');
-          const ifr = document.createElement('iframe'); ifr.style.display='none'; ifr.src = schemeUrl; document.body.appendChild(ifr);
-          setTimeout(()=> ifr.remove(), 1200);
-          return;
-        }
-      } catch(e){}
-      // Fallback: navigate to the URL normally
-      location.href = targetUrl;
-    });
-    backBtn.addEventListener('click', function(){
-      if (document.referrer) history.back();
-      else alert('前のページ情報がありません。手動で戻ってください。');
-    });
-
-    // Change button: navigate to same path but with encoded target after .html
-    changeBtn.addEventListener('click', function(){
-      const newUrl = input.value.trim();
-      if (!newUrl) return alert('URLを入力してください');
-      // If current pathname contains .html, build base up to that .html
-      const p = location.pathname;
-      const idx = p.toLowerCase().indexOf('.html');
-      let base = location.origin;
-      if (idx !== -1) {
-        base += p.substring(0, idx + 5); // include ".html"
-      } else {
-        base += '/AAA.html';
-      }
-      // preserve timer if user set one currently
-      const timer = window.__autoRedirectTimer;
-      const encoded = encodeURIComponent(newUrl);
-      const newPath = base + '/' + encoded + (timer ? ('/-t' + timer) : '/') ;
-      location.href = newPath;
-    });
-
-    // Timer auto-redirect (from parsed timer or from window.__autoRedirectTimer)
-    (function handleTimer(){
-      // Timer precedence: parsed window.__autoRedirectTimer OR ?t= query
-      let timer = window.__autoRedirectTimer || null;
-      // allow q param ?t= for testing
-      const tQuery = qs.get('t');
-      if (tQuery && /^\d+$/.test(tQuery)) timer = parseInt(tQuery,10);
-
-      if (timer && targetUrl) {
-        let remaining = timer;
-        timerEl.classList.add('show');
+      if (!isNaN(tParam) && tParam > 0) {
+        timeInput.value = tParam;
+        let remaining = tParam;
+        timerEl.classList.add("show");
         timerEl.textContent = `${remaining} 秒後に移動します…`;
-        const interval = setInterval(function(){
+
+        const interval = setInterval(() => {
           remaining--;
           if (remaining <= 0) {
             clearInterval(interval);
-            timerEl.textContent = '移動中…';
-            location.href = targetUrl;
+            timerEl.textContent = "移動中…";
+            location.href = decodedUrl;
           } else {
             timerEl.textContent = `${remaining} 秒後に移動します…`;
           }
         }, 1000);
       }
-    })();
+    } else {
+      targetEl.textContent = "URLパラメータ (?url=) が指定されていません。";
+    }
 
+    openBtn.onclick = () => { if (urlParam) location.href = decodeURIComponent(urlParam); };
+    safariBtn.onclick = () => { if (urlParam) window.open(decodeURIComponent(urlParam), "_blank"); };
+    appBtn.onclick = () => {
+      const target = decodeURIComponent(urlParam || "");
+      if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(target) && !/^https?:/i.test(target)) {
+        const ifr = document.createElement("iframe");
+        ifr.style.display = "none";
+        ifr.src = target;
+        document.body.appendChild(ifr);
+        setTimeout(()=>ifr.remove(), 1500);
+      } else {
+        location.href = target;
+      }
+    };
+    backBtn.onclick = () => { if (document.referrer) history.back(); };
+
+    changeBtn.onclick = () => {
+      const newUrl = input.value.trim();
+      if (!newUrl) return alert("URLを入力してください");
+      const tValue = timeInput.value ? `&t=${timeInput.value}` : "";
+      location.href = `${location.pathname}?url=${encodeURIComponent(newUrl)}${tValue}`;
+    };
+
+    timeBtn.onclick = () => {
+      const newTime = parseInt(timeInput.value, 10);
+      if (isNaN(newTime) || newTime <= 0) return alert("正しい秒数を入力してください");
+      const currentUrl = input.value.trim() || urlParam;
+      if (!currentUrl) return alert("URLが未指定です");
+      location.href = `${location.pathname}?url=${encodeURIComponent(currentUrl)}&t=${newTime}`;
+    };
   })();
   </script>
 </body>
