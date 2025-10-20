@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>リンク誘導ページ（t=0対応版）</title>
+  <title>リンク誘導ページ（Safari対応・安定版）</title>
   <style>
     body {
       font-family: -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial;
@@ -54,8 +54,8 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>リンク誘導ページ（t=0対応版）</h1>
-    <p>例：<code>?url=https://app.videostep.io&t=5&s=1</code> — <strong>t=0</strong> が即時リダイレクトされます。</p>
+    <h1>リンク誘導ページ（Safari対応・安定版）</h1>
+    <p>例：<code>?url=https://app.videostep.io&t=5&s=1</code></p>
 
     <div class="urlbox">
       <input id="urlInput" type="text" placeholder="新しいURLを入力 (例: https://...)" />
@@ -89,9 +89,7 @@
   (function(){
     const params = new URLSearchParams(location.search);
     const urlParam = params.get("url");
-    // allow empty string '0' to be distinguished from null
-    const rawT = params.get("t");
-    const tParam = rawT !== null ? parseInt(rawT, 10) : null;
+    const tParam = parseInt(params.get("t"), 10);
     const sParam = params.get("s") === "1" ? 1 : 0;
 
     const targetEl = document.getElementById("target");
@@ -106,29 +104,18 @@
     const backBtn = document.getElementById("backBtn");
     const timerEl = document.getElementById("timer");
 
-    // helper to build URL while preserving t=0
-    function rebuildURL(newUrl, t, s) {
-      const base = location.pathname;
-      const u = base + '?url=' + encodeURIComponent(newUrl);
-      // include t if it's not null/undefined/empty string; allow t===0
-      const tPart = (t !== null && t !== undefined && t !== '') ? ('&t=' + encodeURIComponent(t)) : '';
-      const sPart = (s === 1) ? '&s=1' : '&s=0';
-      return u + tPart + sPart;
-    }
-
     if (urlParam) {
       const decodedUrl = decodeURIComponent(urlParam);
       targetEl.textContent = decodedUrl;
       input.value = decodedUrl;
       safariCheck.checked = sParam === 1;
 
-      if (tParam !== null && !isNaN(tParam) && tParam >= 0) {
+      if (!isNaN(tParam) && tParam >= 0) {
         timeInput.value = tParam;
 
-        // immediate redirect when t === 0
         if (tParam === 0) {
+          // 即時リダイレクト
           if (sParam === 1) {
-            // Safari mode: use window.open (user-initiated works best; but this keeps previous behavior)
             window.open(decodedUrl, "_blank");
           } else {
             location.href = decodedUrl;
@@ -175,29 +162,27 @@
     };
     backBtn.onclick = () => { if (document.referrer) history.back(); };
 
+    const rebuildURL = (newUrl, t, s) =>
+      `${location.pathname}?url=${encodeURIComponent(newUrl)}${t ? `&t=${t}` : ""}${s ? `&s=${s}` : ""}`;
+
     changeBtn.onclick = () => {
       const newUrl = input.value.trim();
       if (!newUrl) return alert("URLを入力してください");
-      const tValue = timeInput.value !== '' ? timeInput.value : '';
-      location.href = rebuildURL(newUrl, tValue, safariCheck.checked ? 1 : 0);
+      location.href = rebuildURL(newUrl, timeInput.value, safariCheck.checked ? 1 : 0);
     };
 
     timeBtn.onclick = () => {
-      const newTimeRaw = timeInput.value;
-      if (newTimeRaw === '') return alert("秒数を入力してください（0で即時）");
-      const newTime = parseInt(newTimeRaw, 10);
+      const newTime = parseInt(timeInput.value, 10);
       if (isNaN(newTime) || newTime < 0) return alert("正しい秒数を入力してください");
       const currentUrl = input.value.trim() || urlParam;
       if (!currentUrl) return alert("URLが未指定です");
       location.href = rebuildURL(currentUrl, newTime, safariCheck.checked ? 1 : 0);
     };
 
-    // reflect safari checkbox change immediately (preserve t even if 0)
     safariCheck.onchange = () => {
       const currentUrl = input.value.trim() || urlParam;
-      if (!currentUrl) return;
-      const tValue = timeInput.value !== '' ? timeInput.value : (tParam !== null ? tParam : '');
-      location.href = rebuildURL(currentUrl, tValue, safariCheck.checked ? 1 : 0);
+      const newS = safariCheck.checked ? 1 : 0;
+      location.href = rebuildURL(currentUrl, timeInput.value, newS);
     };
   })();
   </script>
