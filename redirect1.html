@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>リンク誘導ページ</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial;
+      background: #f6f8fb;
+      margin: 0;
+      color: #111;
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 6vh auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      padding: 24px;
+    }
+    h1 { font-size: 20px; margin: 0 0 10px; }
+    p { margin: 0 0 16px; color: #444; }
+    .target {
+      word-break: break-all;
+      background: #f0f4ff;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: 0;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .btn.open { background: #0066ff; color: white; }
+    .btn.safari { background: #1d1d1d; color: white; }
+    .btn.fallback { background: #e2e8f0; color: #111; }
+    .btn.back { background: #ccc; color: #000; }
+    .note { margin-top: 14px; color: #666; font-size: 14px; }
+    .urlbox {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .urlbox input {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .urlbox button {
+      padding: 8px 14px;
+      font-size: 15px;
+      border: 0;
+      border-radius: 6px;
+      background: #007aff;
+      color: #fff;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>外部リンク誘導ページ</h1>
+    <p><code>?url=〇〇〇</code> の形式でアクセスすると、指定リンクを開けます。</p>
+
+    <div class="urlbox">
+      <input id="urlInput" type="text" placeholder="ここに新しいURLを入力" />
+      <button id="changeBtn">開く</button>
+    </div>
+
+    <div>
+      <strong>誘導先URL：</strong>
+      <div id="target" class="target">解析中…</div>
+    </div>
+
+    <div class="btns">
+      <button id="openBtn" class="btn open">リンクへ移動（通常）</button>
+      <button id="safariBtn" class="btn safari">Safariで開く</button>
+      <button id="fallbackBtn" class="btn fallback">アプリ起動を試す</button>
+      <button id="backBtn" class="btn back">戻る</button>
+    </div>
+
+    <div id="msg" class="note">
+      ※ アプリ内ブラウザではリダイレクト後に真っ白になることがあります。<br>
+      その場合は「戻る」ボタンでこのページに戻れます。
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const params = new URLSearchParams(location.search);
+      const targetUrl = params.get('url');
+      const targetEl = document.getElementById('target');
+      const openBtn = document.getElementById('openBtn');
+      const safariBtn = document.getElementById('safariBtn');
+      const fallbackBtn = document.getElementById('fallbackBtn');
+      const backBtn = document.getElementById('backBtn');
+      const input = document.getElementById('urlInput');
+      const changeBtn = document.getElementById('changeBtn');
+
+      if (targetUrl) {
+        targetEl.textContent = targetUrl;
+        input.value = targetUrl;
+      } else {
+        targetEl.textContent = 'URL指定が見つかりません。上のボックスに入力してください。';
+      }
+
+      openBtn.onclick = () => { if (targetUrl) location.href = targetUrl; };
+      safariBtn.onclick = () => { if (targetUrl) window.open(targetUrl, '_blank', 'noopener'); };
+      fallbackBtn.onclick = () => {
+        if (!targetUrl) return alert('ターゲットがありません');
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = targetUrl;
+        document.body.appendChild(iframe);
+        setTimeout(()=>iframe.remove(),1500);
+      };
+      backBtn.onclick = () => {
+        if (document.referrer) {
+          history.back();
+        } else {
+          alert('前のページ情報がありません。手動で戻ってください。');
+        }
+      };
+
+      changeBtn.onclick = () => {
+        const newUrl = input.value.trim();
+        if (!newUrl) return alert('URLを入力してください');
+        location.href = location.pathname + '?url=' + encodeURIComponent(newUrl);
+      };
+    })();
+  </script>
+</body>
+</html>
