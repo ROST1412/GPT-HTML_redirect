@@ -3,25 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>URLリダイレクトツール</title>
+<title>VideoStep リンク誘導ページ</title>
 <style>
   body {
-    font-family: sans-serif;
+    font-family: "Segoe UI", sans-serif;
     text-align: center;
-    margin: 40px;
-    background-color: #fafafa;
+    padding: 40px;
+    background: #fafafa;
   }
+  h2 { margin-bottom: 20px; }
   input, button {
     font-size: 1rem;
     margin: 6px;
-    padding: 8px;
+    padding: 8px 14px;
   }
   #timerBox {
     position: fixed;
     right: 15px;
     bottom: 15px;
     font-size: 0.9rem;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0,0,0,0.65);
     color: #fff;
     padding: 8px 12px;
     border-radius: 8px;
@@ -34,49 +35,42 @@
     background: rgba(255,255,255,0.9);
     justify-content: center;
     align-items: center;
-    font-size: 1.4rem;
-    animation: fadeIn 0.3s ease forwards;
+    flex-direction: column;
+    font-size: 1.2rem;
   }
-  #overlay.show { display: flex; }
-  @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+  #overlay.show { display: flex; animation: fadeIn 0.3s ease forwards; }
+  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
   #spin {
     border: 4px solid #ccc;
     border-top: 4px solid #333;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
     animation: spin 0.8s linear infinite;
-    margin: 0 auto 15px auto;
+    margin-bottom: 15px;
   }
   @keyframes spin { 100% { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-  <h2>Safariリダイレクトテスト</h2>
-  <p>以下のURLを入力してSafariで開きます。</p>
 
-  <div>
-    <input id="urlInput" type="text" placeholder="https://example.com" size="40">
-  </div>
+  <h2>VideoStep リンク誘導ページ</h2>
+  <p>以下のURLに基づいて遷移します。</p>
 
-  <div>
-    <label>自動redirectタイマー(秒):</label>
-    <input id="timerInput" type="number" value="0" min="0" style="width:60px;">
-    <label><input type="checkbox" id="autoEnable"> 使用する</label>
-  </div>
+  <input id="urlInput" type="text" size="45" placeholder="https://app.videostep.io">
+  <br>
+  <button id="changeUrl">URLを変更する</button>
+  <br><br>
 
-  <div>
-    <button id="changeUrl">URLを変更する</button>
-    <button id="safariBtn">Safariで開く</button>
-  </div>
+  <button id="normalBtn">リンクへ移動（通常）</button>
+  <button id="safariBtn">Safariで開く（推奨）</button>
+  <button id="appBtn">アプリ起動を試す（カスタムスキーム）</button>
 
   <div id="timerBox"></div>
 
   <div id="overlay">
-    <div>
-      <div id="spin"></div>
-      <div>Safariで開いています...</div>
-    </div>
+    <div id="spin"></div>
+    <div>Safariで開いています...</div>
   </div>
 
 <script>
@@ -84,31 +78,31 @@
   const params = new URLSearchParams(location.search);
   const urlParam = params.get("url");
   const tParam = parseInt(params.get("t") || "0");
+
   const input = document.getElementById("urlInput");
-  const timerInput = document.getElementById("timerInput");
-  const autoEnable = document.getElementById("autoEnable");
+  const overlay = document.getElementById("overlay");
   const timerBox = document.getElementById("timerBox");
   const safariBtn = document.getElementById("safariBtn");
-  const overlay = document.getElementById("overlay");
 
   if (urlParam) input.value = urlParam;
-  if (!isNaN(tParam)) timerInput.value = tParam;
 
-  function openInSafari(url){
+  function openInSafari(url) {
     overlay.classList.add("show");
     setTimeout(() => {
       try {
         const ua = navigator.userAgent;
         const isiOS = /iPhone|iPad|iPod/i.test(ua);
         const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+
         if (isiOS && !isSafari) {
-          // iOSアプリ内ブラウザ対応
+          // iOSアプリ内ブラウザ → Safariへ
           const newWin = window.open(url, "_blank");
           if (!newWin) location.href = url;
         } else if (!isiOS && !isSafari) {
-          // Windows / Chrome等
+          // Windows/Chrome → 新タブ
           window.open(url, "_blank");
         } else {
+          // Safari → 同タブ
           location.href = url;
         }
       } catch (e) {
@@ -119,8 +113,12 @@
 
   document.getElementById("changeUrl").onclick = () => {
     const newUrl = input.value.trim();
-    const t = autoEnable.checked ? parseInt(timerInput.value || "0") : 0;
-    location.href = `${location.origin}${location.pathname}?url=${encodeURIComponent(newUrl)}&t=${t}`;
+    location.href = `${location.origin}${location.pathname}?url=${encodeURIComponent(newUrl)}&t=${tParam}`;
+  };
+
+  document.getElementById("normalBtn").onclick = () => {
+    const url = input.value.trim();
+    if (url) location.href = url;
   };
 
   safariBtn.onclick = () => {
@@ -128,20 +126,27 @@
     if (url) openInSafari(url);
   };
 
-  // タイマー付きredirect
-  if (urlParam && !isNaN(tParam) && autoEnable.checked) {
+  document.getElementById("appBtn").onclick = () => {
+    try {
+      location.href = "videostepclientapp://";
+    } catch(e){}
+  };
+
+  // 自動リダイレクトタイマー
+  if (urlParam && !isNaN(tParam)) {
     if (tParam <= 0) {
-      safariBtn.click();
+      safariBtn.click(); // 即Safariで開く
     } else {
       let remaining = tParam;
       timerBox.style.display = "block";
       timerBox.textContent = `${remaining} 秒後にSafariで開きます…`;
+
       const interval = setInterval(() => {
         remaining--;
         if (remaining <= 0) {
           clearInterval(interval);
           timerBox.textContent = "Safariで開いています…";
-          safariBtn.click(); // 擬似クリックでSafariを開く
+          safariBtn.click(); // 擬似クリックでSafariを確実に開く
         } else {
           timerBox.textContent = `${remaining} 秒後にSafariで開きます…`;
         }
