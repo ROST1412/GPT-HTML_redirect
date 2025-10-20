@@ -1,258 +1,154 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>リンク誘導ページ</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial;
-      background: #f6f8fb;
-      margin: 0;
-      color: #111;
-    }
-    .wrap {
-      max-width: 720px;
-      margin: 6vh auto;
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-      padding: 24px;
-    }
-    h1 {
-      font-size: 20px;
-      margin: 0 0 10px;
-    }
-    .target {
-      word-break: break-all;
-      background: #f0f4ff;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 16px;
-    }
-    .urlbox, .timerbox {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-    input {
-      flex: 1;
-      padding: 8px 10px;
-      font-size: 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-    button {
-      padding: 8px 14px;
-      font-size: 15px;
-      border: 0;
-      border-radius: 6px;
-      background: #007aff;
-      color: #fff;
-      cursor: pointer;
-    }
-    .btns {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .btn {
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 16px;
-      border: 0;
-      cursor: pointer;
-    }
-    .btn.open { background: #0066ff; color: #fff; }
-    .btn.safari { background: #1d1d1d; color: #fff; }
-    .btn.app { background: #e2e8f0; color: #111; }
-    .btn.back { background: #ccc; color: #000; }
-    .note { margin-top: 14px; color: #666; font-size: 14px; }
-    #timer {
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      background: rgba(0,0,0,0.75);
-      color: #fff;
-      padding: 8px 14px;
-      border-radius: 20px;
-      font-size: 14px;
-      z-index: 9999;
-      opacity: 0;
-      transition: opacity .3s;
-    }
-    #timer.show { opacity: 1; }
-    /* Safariロードアニメーション */
-    #overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(255, 255, 255, 0.9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s;
-      z-index: 99999;
-    }
-    #overlay.show {
-      opacity: 1;
-      pointer-events: all;
-    }
-    #overlay span {
-      font-size: 18px;
-      color: #333;
-      margin-top: 16px;
-      animation: blink 1.2s infinite;
-    }
-    .loader {
-      border: 4px solid #ddd;
-      border-top: 4px solid #007aff;
-      border-radius: 50%;
-      width: 42px;
-      height: 42px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes blink {
-      0%,100% { opacity: 0.3; }
-      50% { opacity: 1; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URLリダイレクトツール</title>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    margin: 40px;
+    background-color: #fafafa;
+  }
+  input, button {
+    font-size: 1rem;
+    margin: 6px;
+    padding: 8px;
+  }
+  #timerBox {
+    position: fixed;
+    right: 15px;
+    bottom: 15px;
+    font-size: 0.9rem;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    display: none;
+  }
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.9);
+    justify-content: center;
+    align-items: center;
+    font-size: 1.4rem;
+    animation: fadeIn 0.3s ease forwards;
+  }
+  #overlay.show { display: flex; }
+  @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
+  #spin {
+    border: 4px solid #ccc;
+    border-top: 4px solid #333;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 15px auto;
+  }
+  @keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>リンク誘導ページ（?url=形式）</h1>
-    <p>例：<code>?url=https://app.videostep.io&t=5</code></p>
+  <h2>Safariリダイレクトテスト</h2>
+  <p>以下のURLを入力してSafariで開きます。</p>
 
-    <div class="urlbox">
-      <input id="urlInput" type="text" placeholder="新しいURLを入力 (例: https://...)" />
-      <button id="changeBtn">URLを変更する</button>
-    </div>
-
-    <div class="timerbox">
-      <input id="timerInput" type="number" min="0" placeholder="秒数 (空欄で自動redirect解除)" />
-      <button id="timerBtn">タイマー設定</button>
-    </div>
-
-    <div><strong>誘導先URL：</strong>
-      <div id="target" class="target">解析中…</div>
-    </div>
-
-    <div class="btns">
-      <button id="openBtn" class="btn open">リンクへ移動</button>
-      <button id="safariBtn" class="btn safari">Safariで開く</button>
-      <button id="appBtn" class="btn app">アプリ起動を試す</button>
-      <button id="backBtn" class="btn back">戻る</button>
-    </div>
-
-    <div class="note">アプリ内ブラウザでは挙動が制限される場合があります。</div>
+  <div>
+    <input id="urlInput" type="text" placeholder="https://example.com" size="40">
   </div>
 
-  <div id="timer"></div>
+  <div>
+    <label>自動redirectタイマー(秒):</label>
+    <input id="timerInput" type="number" value="0" min="0" style="width:60px;">
+    <label><input type="checkbox" id="autoEnable"> 使用する</label>
+  </div>
+
+  <div>
+    <button id="changeUrl">URLを変更する</button>
+    <button id="safariBtn">Safariで開く</button>
+  </div>
+
+  <div id="timerBox"></div>
+
   <div id="overlay">
-    <div class="loader"></div>
-    <span>Safariで開いています…</span>
+    <div>
+      <div id="spin"></div>
+      <div>Safariで開いています...</div>
+    </div>
   </div>
 
-  <script>
-  (function(){
-    const params = new URLSearchParams(location.search);
-    const urlParam = params.get("url");
-    let tParam = parseInt(params.get("t"), 10);
+<script>
+(function(){
+  const params = new URLSearchParams(location.search);
+  const urlParam = params.get("url");
+  const tParam = parseInt(params.get("t") || "0");
+  const input = document.getElementById("urlInput");
+  const timerInput = document.getElementById("timerInput");
+  const autoEnable = document.getElementById("autoEnable");
+  const timerBox = document.getElementById("timerBox");
+  const safariBtn = document.getElementById("safariBtn");
+  const overlay = document.getElementById("overlay");
 
-    const targetEl = document.getElementById("target");
-    const input = document.getElementById("urlInput");
-    const changeBtn = document.getElementById("changeBtn");
-    const openBtn = document.getElementById("openBtn");
-    const safariBtn = document.getElementById("safariBtn");
-    const appBtn = document.getElementById("appBtn");
-    const backBtn = document.getElementById("backBtn");
-    const timerEl = document.getElementById("timer");
-    const overlay = document.getElementById("overlay");
-    const timerInput = document.getElementById("timerInput");
-    const timerBtn = document.getElementById("timerBtn");
+  if (urlParam) input.value = urlParam;
+  if (!isNaN(tParam)) timerInput.value = tParam;
 
-    function openInSafari(url) {
-      overlay.classList.add("show");
-      setTimeout(() => {
-        try {
+  function openInSafari(url){
+    overlay.classList.add("show");
+    setTimeout(() => {
+      try {
+        const ua = navigator.userAgent;
+        const isiOS = /iPhone|iPad|iPod/i.test(ua);
+        const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+        if (isiOS && !isSafari) {
+          // iOSアプリ内ブラウザ対応
           const newWin = window.open(url, "_blank");
           if (!newWin) location.href = url;
-        } catch (e) {
+        } else if (!isiOS && !isSafari) {
+          // Windows / Chrome等
+          window.open(url, "_blank");
+        } else {
           location.href = url;
         }
-      }, 100);
-    }
-
-    if (urlParam) {
-      const decodedUrl = decodeURIComponent(urlParam);
-      targetEl.textContent = decodedUrl;
-      input.value = decodedUrl;
-      if (!isNaN(tParam)) timerInput.value = tParam;
-
-      // t=0 の場合は即時Safariで開く
-      if (!isNaN(tParam) && tParam === 0) {
-        openInSafari(decodedUrl);
+      } catch (e) {
+        location.href = url;
       }
-      // t>0 の場合はカウントダウン→Safariで開く
-      else if (!isNaN(tParam) && tParam > 0) {
-        let remaining = tParam;
-        timerEl.classList.add("show");
-        timerEl.textContent = `${remaining} 秒後にSafariで開きます…`;
+    }, 100);
+  }
 
-        const interval = setInterval(() => {
-          remaining--;
-          if (remaining <= 0) {
-            clearInterval(interval);
-            timerEl.textContent = "Safariで開いています…";
-            openInSafari(decodedUrl);
-          } else {
-            timerEl.textContent = `${remaining} 秒後にSafariで開きます…`;
-          }
-        }, 1000);
-      }
+  document.getElementById("changeUrl").onclick = () => {
+    const newUrl = input.value.trim();
+    const t = autoEnable.checked ? parseInt(timerInput.value || "0") : 0;
+    location.href = `${location.origin}${location.pathname}?url=${encodeURIComponent(newUrl)}&t=${t}`;
+  };
+
+  safariBtn.onclick = () => {
+    const url = input.value.trim();
+    if (url) openInSafari(url);
+  };
+
+  // タイマー付きredirect
+  if (urlParam && !isNaN(tParam) && autoEnable.checked) {
+    if (tParam <= 0) {
+      safariBtn.click();
     } else {
-      targetEl.textContent = "URLパラメータ (?url=) が指定されていません。";
+      let remaining = tParam;
+      timerBox.style.display = "block";
+      timerBox.textContent = `${remaining} 秒後にSafariで開きます…`;
+      const interval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+          clearInterval(interval);
+          timerBox.textContent = "Safariで開いています…";
+          safariBtn.click(); // 擬似クリックでSafariを開く
+        } else {
+          timerBox.textContent = `${remaining} 秒後にSafariで開きます…`;
+        }
+      }, 1000);
     }
-
-    openBtn.onclick = () => { if (urlParam) location.href = decodeURIComponent(urlParam); };
-    safariBtn.onclick = () => { if (urlParam) openInSafari(decodeURIComponent(urlParam)); };
-    appBtn.onclick = () => {
-      const target = decodeURIComponent(urlParam || "");
-      if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(target) && !/^https?:/i.test(target)) {
-        const ifr = document.createElement("iframe");
-        ifr.style.display = "none";
-        ifr.src = target;
-        document.body.appendChild(ifr);
-        setTimeout(()=>ifr.remove(), 1500);
-      } else {
-        location.href = target;
-      }
-    };
-    backBtn.onclick = () => { if (document.referrer) history.back(); };
-
-    changeBtn.onclick = () => {
-      const newUrl = input.value.trim();
-      if (!newUrl) return alert("URLを入力してください");
-      const newT = timerInput.value ? "&t=" + parseInt(timerInput.value, 10) : "";
-      location.href = `${location.pathname}?url=${encodeURIComponent(newUrl)}${newT}`;
-    };
-
-    timerBtn.onclick = () => {
-      const newT = timerInput.value.trim();
-      const urlNow = input.value.trim();
-      if (!urlNow) return alert("URLを入力してください");
-      if (!newT) {
-        location.href = `${location.pathname}?url=${encodeURIComponent(urlNow)}`;
-      } else {
-        location.href = `${location.pathname}?url=${encodeURIComponent(urlNow)}&t=${parseInt(newT, 10)}`;
-      }
-    };
-  })();
-  </script>
+  }
+})();
+</script>
 </body>
 </html>
