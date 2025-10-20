@@ -3,58 +3,47 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>リンク誘導ページ（選択式リダイレクト対応）</title>
+  <title>リンク誘導ページ（設定復元版）</title>
   <style>
-    body { font-family: -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial;
-           background:#f6f8fb;margin:0;color:#111;}
-    .wrap { max-width:720px;margin:6vh auto;background:#fff;
-            border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.08);
-            padding:24px;}
-    h1 {font-size:20px;margin:0 0 10px;}
-    p {margin:0 0 16px;color:#444;}
-    .target {word-break:break-all;background:#f0f4ff;
-             padding:10px;border-radius:6px;margin-bottom:16px;}
-    .urlbox,.timebox {display:flex;gap:8px;margin-bottom:20px;}
-    input[type=text],input[type=number]{flex:1;padding:8px 10px;font-size:15px;
-             border:1px solid #ccc;border-radius:6px;}
-    button{padding:8px 14px;font-size:15px;border:0;border-radius:6px;
-           background:#007aff;color:#fff;cursor:pointer;}
-    .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
-    .btn{flex:1;padding:12px;border-radius:10px;border:0;font-size:16px;cursor:pointer;}
-    .btn.open{background:#0066ff;color:white;}
-    .btn.safari{background:#1d1d1d;color:white;}
-    .btn.app{background:#e2e8f0;color:#111;}
-    .btn.back{background:#ccc;color:#000;}
-    .note{margin-top:14px;color:#666;font-size:14px;}
-    #timer{position:fixed;right:16px;bottom:16px;background:rgba(0,0,0,0.8);
-           color:#fff;padding:8px 14px;border-radius:20px;font-size:14px;
-           z-index:9999;opacity:0;transition:opacity .3s;
-           display:flex;align-items:center;gap:8px;}
-    #timer.show{opacity:1;}
-    #stopBtn{background:#ff4d4d;color:#fff;border:none;
-             border-radius:16px;padding:4px 8px;font-size:12px;cursor:pointer;}
-    .checkline{display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial;background:#f6f8fb;margin:0;color:#111}
+    .wrap{max-width:720px;margin:6vh auto;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,0.08);padding:24px}
+    h1{font-size:20px;margin:0 0 10px} p{margin:0 0 16px;color:#444}
+    .target{word-break:break-all;background:#f0f4ff;padding:10px;border-radius:6px;margin-bottom:16px}
+    .urlbox,.timebox{display:flex;gap:8px;margin-bottom:20px}
+    input[type=text],input[type=number]{flex:1;padding:8px 10px;font-size:15px;border:1px solid #ccc;border-radius:6px}
+    button{padding:8px 14px;font-size:15px;border:0;border-radius:6px;background:#007aff;color:#fff;cursor:pointer}
+    .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+    .btn{flex:1;padding:12px;border-radius:10px;border:0;font-size:16px;cursor:pointer}
+    .btn.open{background:#0066ff;color:white}
+    .btn.safari{background:#1d1d1d;color:white}
+    .btn.app{background:#e2e8f0;color:#111}
+    .btn.back{background:#ccc;color:#000}
+    .note{margin-top:14px;color:#666;font-size:14px}
+    #timer{position:fixed;right:16px;bottom:16px;background:rgba(0,0,0,0.8);color:#fff;padding:8px 14px;border-radius:20px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s;display:flex;align-items:center;gap:8px}
+    #timer.show{opacity:1}
+    #stopBtn{background:#ff4d4d;color:#fff;border:none;border-radius:16px;padding:4px 8px;font-size:12px;cursor:pointer}
+    .checkline{display:flex;align-items:center;gap:8px;margin-bottom:16px}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>リンク誘導ページ（?url=形式 & t=秒数 & s=モード）</h1>
-    <p>例：<code>?url=https://app.videostep.io&t=5&s=1</code></p>
+    <h1>リンク誘導ページ（設定復元版）</h1>
+    <p>形式：<code>?url=URL&t=秒数&s=0または1</code> — ページ読み込み時に現在の設定をフォームへ復元します。</p>
 
     <div class="urlbox">
-      <input id="urlInput" type="text" placeholder="新しいURLを入力 (例: https://...)" />
+      <input id="urlInput" type="text" placeholder="新しいURLを入力 (例: https://... または videostepclientapp://...)" />
       <button id="changeBtn">URLを変更する</button>
     </div>
 
     <div class="timebox">
-      <input id="timeInput" type="number" min="0" placeholder="自動移動までの秒数 (0で即時)" />
+      <input id="timeInput" type="number" min="0" placeholder="自動移動までの秒数 (0=即時)" />
       <button id="timeBtn">タイマーを変更</button>
       <button id="removeTimeBtn" style="background:#999;">タイマー削除</button>
     </div>
 
     <div class="checkline">
       <input type="checkbox" id="safariCheck" />
-      <label for="safariCheck">Safariで開くを使用</label>
+      <label for="safariCheck">Safariで開くを使用（&amp;s=1）</label>
     </div>
 
     <div><strong>誘導先URL：</strong>
@@ -75,117 +64,183 @@
 
   <script>
   (function(){
-    const params = new URLSearchParams(location.search);
-    const urlParam = params.get("url");
-    const tParam = parseInt(params.get("t"),10);
-    const sParam = parseInt(params.get("s"),10)||0;
+    'use strict';
 
-    const targetEl=document.getElementById("target");
-    const input=document.getElementById("urlInput");
-    const changeBtn=document.getElementById("changeBtn");
-    const timeInput=document.getElementById("timeInput");
-    const timeBtn=document.getElementById("timeBtn");
-    const removeTimeBtn=document.getElementById("removeTimeBtn");
-    const safariCheck=document.getElementById("safariCheck");
-    const openBtn=document.getElementById("openBtn");
-    const safariBtn=document.getElementById("safariBtn");
-    const appBtn=document.getElementById("appBtn");
-    const backBtn=document.getElementById("backBtn");
-    const timerEl=document.getElementById("timer");
-    const timerText=document.getElementById("timerText");
-    const stopBtn=document.getElementById("stopBtn");
+    const qs = new URLSearchParams(location.search);
+    const rawUrl = qs.get('url') || '';
+    const rawT = qs.get('t');
+    const rawS = qs.get('s');
 
-    let redirectTimer=null;
-    let remaining=0;
-    let autoSafari=sParam===1;
-
-    safariCheck.checked=autoSafari;
-
-    if(urlParam){
-      const decodedUrl=decodeURIComponent(urlParam);
-      targetEl.textContent=decodedUrl;
-      input.value=decodedUrl;
-
-      if(!isNaN(tParam)&&tParam>=0){
-        timeInput.value=tParam;
-        remaining=tParam;
-
-        const startRedirect=()=>{
-          if(autoSafari){
-            window.open(decodedUrl,"_blank");
-          }else{
-            location.href=decodedUrl;
-          }
-        };
-
-        if(tParam===0){
-          startRedirect();
-        }else if(tParam>0){
-          timerEl.classList.add("show");
-          timerText.textContent=`${remaining} 秒後に移動します…`;
-
-          redirectTimer=setInterval(()=>{
-            remaining--;
-            if(remaining<=0){
-              clearInterval(redirectTimer);
-              timerText.textContent="移動中…";
-              startRedirect();
-            }else{
-              timerText.textContent=`${remaining} 秒後に移動します…`;
-            }
-          },1000);
-        }
+    // decode url safely (handles double-encoding)
+    function safeDecode(u){
+      if (!u) return '';
+      try { return decodeURIComponent(u); }
+      catch(e){
+        try { return decodeURIComponent(decodeURIComponent(u)); }
+        catch(e2){ return u; }
       }
-    }else{
-      targetEl.textContent="URLパラメータ (?url=) が指定されていません。";
     }
 
-    stopBtn.onclick=()=>{
-      if(redirectTimer){
-        clearInterval(redirectTimer);
-        redirectTimer=null;
-        timerText.textContent="⏸ 自動移動を停止しました";
+    const decodedUrl = safeDecode(rawUrl);
+    const tParam = (rawT !== null && rawT !== undefined && rawT !== '') ? Math.max(0, parseInt(rawT, 10) || 0) : null;
+    const sParam = (rawS === '1') ? 1 : 0;
+
+    // DOM
+    const urlInput = document.getElementById('urlInput');
+    const changeBtn = document.getElementById('changeBtn');
+    const timeInput = document.getElementById('timeInput');
+    const timeBtn = document.getElementById('timeBtn');
+    const removeTimeBtn = document.getElementById('removeTimeBtn');
+    const safariCheck = document.getElementById('safariCheck');
+    const targetEl = document.getElementById('target');
+    const openBtn = document.getElementById('openBtn');
+    const safariBtn = document.getElementById('safariBtn');
+    const appBtn = document.getElementById('appBtn');
+    const backBtn = document.getElementById('backBtn');
+    const timerEl = document.getElementById('timer');
+    const timerText = document.getElementById('timerText');
+    const stopBtn = document.getElementById('stopBtn');
+
+    // restore UI from params
+    if (decodedUrl) {
+      urlInput.value = decodedUrl;
+      targetEl.textContent = decodedUrl;
+    } else {
+      urlInput.value = '';
+      targetEl.textContent = 'URLパラメータ (?url=) が指定されていません。';
+    }
+    if (tParam !== null) {
+      timeInput.value = tParam;
+    } else {
+      timeInput.value = '';
+    }
+    safariCheck.checked = (sParam === 1);
+
+    // helper to build param URL
+    function buildParamUrl(url, t, s){
+      const u = location.pathname + '?url=' + encodeURIComponent(url);
+      const tpart = (t !== null && t !== undefined && t !== '') ? ('&t=' + encodeURIComponent(t)) : '';
+      const spart = (s === 1) ? '&s=1' : '&s=0';
+      return u + tpart + spart;
+    }
+
+    // fast open for Safari (create a temporary <a> and click it)
+    function openInSafariFast(url){
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      // click synchronously
+      a.click();
+      setTimeout(()=>a.remove(), 1000);
+    }
+
+    // redirect logic
+    let redirectTimeoutId = null;
+    let remaining = 0;
+    function startAutoRedirect(url, t, s){
+      // clear previous
+      if (redirectTimeoutId) { clearTimeout(redirectTimeoutId); redirectTimeoutId = null; }
+
+      if (t === 0) {
+        // immediate
+        if (s === 1) openInSafariFast(url);
+        else location.href = url;
+        return;
       }
-    };
-
-    openBtn.onclick=()=>{if(urlParam)location.href=decodeURIComponent(urlParam);};
-    safariBtn.onclick=()=>{if(urlParam)window.open(decodeURIComponent(urlParam),"_blank");};
-    appBtn.onclick=()=>{
-      const target=decodeURIComponent(urlParam||"");
-      if(/^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(target)&&!/^https?:/i.test(target)){
-        const ifr=document.createElement("iframe");
-        ifr.style.display="none";ifr.src=target;
-        document.body.appendChild(ifr);
-        setTimeout(()=>ifr.remove(),1500);
-      }else{
-        location.href=target;
+      if (t && t > 0) {
+        remaining = t;
+        timerEl.classList.add('show');
+        timerText.textContent = `${remaining} 秒後に移動します…`;
+        // use setTimeout chain for precision and less drift
+        function tick(){
+          remaining--;
+          if (remaining <= 0) {
+            timerText.textContent = '移動中…';
+            if (s === 1) openInSafariFast(url);
+            else location.href = url;
+            redirectTimeoutId = null;
+          } else {
+            timerText.textContent = `${remaining} 秒後に移動します…`;
+            redirectTimeoutId = setTimeout(tick, 1000);
+          }
+        }
+        redirectTimeoutId = setTimeout(tick, 1000);
       }
-    };
-    backBtn.onclick=()=>{if(document.referrer)history.back();};
+    }
 
-    changeBtn.onclick=()=>{
-      const newUrl=input.value.trim();
-      if(!newUrl)return alert("URLを入力してください");
-      const tVal=timeInput.value?`&t=${timeInput.value}`:"";
-      const sVal=safariCheck.checked?"&s=1":"&s=0";
-      location.href=`${location.pathname}?url=${encodeURIComponent(newUrl)}${tVal}${sVal}`;
-    };
+    stopBtn.addEventListener('click', function(){
+      if (redirectTimeoutId) {
+        clearTimeout(redirectTimeoutId);
+        redirectTimeoutId = null;
+        timerText.textContent = '⏸ 自動移動を停止しました';
+      }
+    });
 
-    timeBtn.onclick=()=>{
-      const newTime=parseInt(timeInput.value,10);
-      if(isNaN(newTime)||newTime<0)return alert("正しい秒数を入力してください");
-      const currentUrl=input.value.trim()||urlParam;
-      if(!currentUrl)return alert("URLが未指定です");
-      const sVal=safariCheck.checked?"&s=1":"&s=0";
-      location.href=`${location.pathname}?url=${encodeURIComponent(currentUrl)}&t=${newTime}${sVal}`;
-    };
+    // initial auto-redirect start (if applicable)
+    if (decodedUrl && tParam !== null && !isNaN(tParam)) {
+      startAutoRedirect(decodedUrl, tParam, sParam);
+    }
 
-    removeTimeBtn.onclick=()=>{
-      const currentUrl=input.value.trim()||urlParam;
-      if(!currentUrl)return alert("URLが未指定です");
-      const sVal=safariCheck.checked?"&s=1":"&s=0";
-      location.href=`${location.pathname}?url=${encodeURIComponent(currentUrl)}${sVal}`;
-    };
+    // buttons
+    openBtn.addEventListener('click', function(){ if (decodedUrl) location.href = decodedUrl; });
+    safariBtn.addEventListener('click', function(){ if (decodedUrl) openInSafariFast(decodedUrl); });
+    appBtn.addEventListener('click', function(){
+      if (!decodedUrl) return;
+      if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(decodedUrl) && !/^https?:\/\//i.test(decodedUrl)) {
+        // custom scheme -> try iframe fallback
+        const ifr = document.createElement('iframe'); ifr.style.display='none'; ifr.src = decodedUrl; document.body.appendChild(ifr);
+        setTimeout(()=> ifr.remove(), 1200);
+      } else {
+        location.href = decodedUrl;
+      }
+    });
+    backBtn.addEventListener('click', function(){ if (document.referrer) history.back(); else alert('前のページ情報がありません。'); });
+
+    // change URL button
+    changeBtn.addEventListener('click', function(){
+      const newUrl = urlInput.value.trim();
+      if (!newUrl) return alert('URLを入力してください');
+      const tVal = timeInput.value ? parseInt(timeInput.value, 10) : '';
+      const sVal = safariCheck.checked ? 1 : 0;
+      location.href = buildParamUrl(newUrl, tVal, sVal);
+    });
+
+    // time change
+    timeBtn.addEventListener('click', function(){
+      const newTimeRaw = timeInput.value;
+      if (newTimeRaw === '') return alert('秒数を入力してください（0で即時）');
+      const newTime = Math.max(0, parseInt(newTimeRaw, 10) || 0);
+      const currentUrl = urlInput.value.trim() || decodedUrl;
+      if (!currentUrl) return alert('URLが未指定です');
+      const sVal = safariCheck.checked ? 1 : 0;
+      location.href = buildParamUrl(currentUrl, newTime, sVal);
+    });
+
+    // remove timer (strip t)
+    removeTimeBtn.addEventListener('click', function(){
+      const currentUrl = urlInput.value.trim() || decodedUrl;
+      if (!currentUrl) return alert('URLが未指定です');
+      const sVal = safariCheck.checked ? 1 : 0;
+      // build without t
+      location.href = buildParamUrl(currentUrl, '', sVal);
+    });
+
+    // when user toggles safari checkbox, reflect in URL without changing t/url
+    safariCheck.addEventListener('change', function(){
+      const currentUrl = urlInput.value.trim() || decodedUrl;
+      if (!currentUrl) return;
+      // keep current t param if present
+      const tVal = timeInput.value !== '' ? parseInt(timeInput.value,10) : (tParam !== null ? tParam : '');
+      const sVal = safariCheck.checked ? 1 : 0;
+      location.href = buildParamUrl(currentUrl, tVal, sVal);
+    });
+
+    // populate urlInput placeholder with decodedUrl (already set above)
+    // done.
+
   })();
   </script>
 </body>
