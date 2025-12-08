@@ -1,0 +1,156 @@
+
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+							<style>
+								body {
+									background-color: white; /* Ensure the iframe has a white background */
+								}
+
+								
+							</style>
+                        </head>
+                        <body>
+                            <!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>リンク誘導ページ</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<!-- 基本セキュリティヘッダー（CSP で nonce を付与） -->
+<meta http-equiv="Strict-Transport-Security"
+      content="max-age=31536000; includeSubDomains; preload">
+<meta http-equiv="Permissions-Policy"
+      content="geolocation=(), microphone=(), camera=(), fullscreen=()">
+<meta http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' 'nonce-ABC123';
+        style-src 'self' 'nonce-ABC123';
+        img-src data:;
+        connect-src 'none';
+        frame-ancestors 'none';
+        base-uri 'self';
+        form-action 'self';
+        block-all-mixed-content;
+        report-uri /csp-report">
+
+<style nonce="ABC123">
+body{margin:0;background:#f6f8fb;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial;color:#111}
+.wrap{max-width:720px;margin:6vh auto;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.08);padding:24px}
+h1{font-size:20px;margin:0 0 10px}
+p{margin:0 0 16px;color:#444}
+.target{word-break:break-all;background:#f0f4ff;padding:10px;border-radius:6px;margin-bottom:16px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.btn{flex:1;padding:12px;border-radius:10px;border:0;font-size:16px;cursor:pointer}
+.btn.open{background:#0066ff;color:#fff}
+.btn.safari{background:#1d1d1d;color:#fff}
+.btn.back{background:#ccc;color:#000}
+.note{margin-top:14px;color:#666;font-size:14px}
+.urlbox{display:flex;gap:8px;margin-bottom:20px}
+.urlbox input{flex:1;padding:8px 10px;font-size:15px;border:1px solid #ccc;border-radius:6px}
+.urlbox button{padding:8px 14px;font-size:15px;border:0;border-radius:6px;background:#007aff;color:#fff;cursor:pointer}
+#errorMsg{color:#c00;margin-top:8px;min-height:1.2em}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <h1>外部リンク誘導ページ</h1>
+  <p><code>?url=〇〇〇</code> の形式でアクセスすると、指定リンクを開けます。</p>
+
+  <!-- URL入力 -->
+  <div class="urlbox">
+    <input id="urlInput" type="text" placeholder="ここに新しいURLを入力">
+    <button id="changeBtn" type="button">URLを変更する</button>
+  </div>
+
+  <!-- 誘導先URL -->
+  <div>
+    <strong>誘導先URL：</strong>
+    <div id="target" class="target" aria-live="polite">解析中…</div>
+  </div>
+
+  <!-- エラーメッセージ -->
+  <div id="errorMsg" role="alert"></div>
+
+  <!-- ボタン -->
+  <div class="btns">
+    <button id="openBtn" class="btn open" type="button" aria-label="リンクへ移動（通常）">
+      リンクへ移動<br>(通常)
+    </button>
+    <button id="safariBtn" class="btn safari" type="button" aria-label="Safariで開く">
+      Safariで開く
+    </button>
+    <button id="backBtn" class="btn back" type="button" aria-label="戻る">
+      戻る
+    </button>
+  </div>
+
+  <div class="note">
+    ※ アプリ内ブラウザではリダイレクト後に真っ白になることがあります。<br>
+    その場合は「戻る」ボタンでこのページに戻れます。
+  </div>
+</div>
+
+<script nonce="ABC123">
+const urlParams = new URLSearchParams(location.search);
+const rawUrl = (urlParams.get('url') || '').trim();
+
+const targetEl = document.getElementById('target');
+const errorEl  = document.getElementById('errorMsg');
+const input    = document.getElementById('urlInput');
+
+let currentUrl = '';
+
+const ALLOWED = /^https:\/\/app\.videostep\.io\/manuals\/.+$/i;
+const allowed = url => ALLOWED.test(url);
+
+const setUrl = url => {
+  currentUrl = url;
+  targetEl.textContent = url;
+  input.value = url;
+  errorEl.textContent = '';
+};
+
+if (rawUrl && allowed(rawUrl)) setUrl(rawUrl);
+else if (rawUrl) {
+  targetEl.textContent = '指定された URL は許可されていません。';
+  errorEl.textContent = '※ 許可された形式は https://app.videostep.io/manuals/ から始まる URL のみです。';
+} else targetEl.textContent = 'URL指定が見つかりません。上のボックスに入力してください。';
+
+document.getElementById('openBtn').onclick = () => {
+  if (!allowed(currentUrl)) { errorEl.textContent = '現在の URL は許可されていないため、遷移できません。'; return; }
+  location.href = currentUrl;
+};
+
+document.getElementById('safariBtn').onclick = () => {
+  if (!allowed(currentUrl)) { errorEl.textContent = '現在の URL は許可されていないため、遷移できません。'; return; }
+  window.open(currentUrl, '_blank');
+};
+
+document.getElementById('backBtn').onclick = () => {
+  if (document.referrer) history.back();
+  else errorEl.textContent = '戻れるページがありません。';
+};
+
+document.getElementById('changeBtn').onclick = () => {
+  const newUrl = input.value.trim();
+  if (!newUrl) { errorEl.textContent = 'URLを入力してください。'; return; }
+  if (!allowed(newUrl)) { errorEl.textContent = 'URL は許可されていません。'; return; }
+  setUrl(newUrl);
+  history.replaceState(null, '', `?url=${encodeURIComponent(newUrl)}`);
+};
+</script>
+</body>
+</html>
+
+							<script>
+                            	
+							</script>
+                        </body>
+                        </html>
+                    
